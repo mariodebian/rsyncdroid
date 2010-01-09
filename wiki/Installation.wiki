@@ -1,0 +1,25 @@
+#summary Install Rsyncdroid in your phone
+#labels Featured,Phase-Deploy
+
+= Installation =
+
+  * Download rsync static bin:
+{{{
+wget http://adqmisc.googlecode.com/svn/trunk/androidutils/rsync/rsync-3.0.6-arm-softfloat-linux-gnueabi.gz
+zcat rsync-3.0.6-arm-softfloat-linux-gnueabi.gz > rsync
+}}}
+  * Copy to phone
+{{{
+./adb push rsync /sdcard/rsync
+./adb shell mount -o remount,rw /dev/block/mtdblock0 /system
+./adb shell "cat /sdcard/rsync > /system/bin/rsync"
+./adb shell chmod 755 /system/bin/rsync
+./adb shell mount -o remount,ro /dev/block/mtdblock0 /system
+}}}
+
+  * Download rsyncdroid.apk from downloads section.
+  * Install it:
+{{{
+./adb install -r ~/Desktop/rsyncdroid.apk 
+}}}
+
