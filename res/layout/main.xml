@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:layout_height="fill_parent" android:padding="6px" android:scrollbarAlwaysDrawVerticalTrack="false">
+
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rsync Droid" android:textSize="20px"></TextView>
+
+<LinearLayout android:layout_height="wrap_content" android:layout_width="fill_parent">
+	<CheckBox android:layout_height="wrap_content" android:id="@+id/Running" android:text="Running?" android:checked="false" android:layout_width="wrap_content" android:layout_weight="1.0" android:clickable="false"></CheckBox>
+</LinearLayout>
+
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Configuration" android:id="@+id/ConfText"></TextView>
+<EditText android:layout_width="fill_parent" android:singleLine="false" android:scrollHorizontally="false" android:scrollbarStyle="insideOverlay" android:scrollbarAlwaysDrawVerticalTrack="false" android:layout_height="wrap_content" android:layout_weight="1.0" android:gravity="top" android:id="@+id/RsyncdConf"></EditText>
+
+<LinearLayout android:layout_height="wrap_content" android:layout_width="fill_parent" android:orientation="horizontal">
+	<Button android:layout_height="wrap_content" android:layout_width="100px" android:id="@+id/ButtonStart" android:text="Start"></Button>
+	<Button android:layout_height="wrap_content" android:text="Stop" android:layout_width="100px" android:id="@+id/ButtonStop"></Button>
+</LinearLayout>
+
+
+
+
+</LinearLayout>
