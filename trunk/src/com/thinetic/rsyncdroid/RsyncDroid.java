@@ -26,7 +26,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-//import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -39,13 +38,12 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-//import android.content.Context;
-//import android.content.Intent;
 import android.widget.Toast;
 
 public class RsyncDroid extends Activity {
 	
 	private static final String LOG_TAG = "RsyncDro";
+	private static final String RSYNCD_DIR= "/sdcard/rsyncdroid/";
 	private static final String RSYNCD_CONF= "/sdcard/rsyncdroid/rsyncd.conf";
 	private static final String RSYNCD_BIN= "/system/bin/rsync";
 	private Process process;
@@ -77,6 +75,7 @@ public class RsyncDroid extends Activity {
 				startRsync();
 				Log.d(LOG_TAG, "onCreate() rsync started...");
 				changeStatus();
+				showMsg("rsync started");
 				setResult(android.app.Activity.RESULT_OK);
 			}
 
@@ -88,6 +87,7 @@ public class RsyncDroid extends Activity {
 
 			public void onClick(View v) {
 				if ( stopRsync() ){
+					showMsg("rsync stopped");
 					setResult(android.app.Activity.RESULT_OK);
 				}
 				changeStatus();
@@ -234,16 +234,16 @@ public class RsyncDroid extends Activity {
     
 	public String loadConf() {
 		String Script="";
-		File rsyncd_conf_folder = new File("/sdcard/rsyncdroid/");
+		File rsyncd_conf_folder = new File(RSYNCD_DIR);
 		
 		if(!rsyncd_conf_folder.exists())
 		{
-			Log.d(LOG_TAG, "Creating /sdcard/rsyncdroid/ folder");
+			Log.d(LOG_TAG, "Creating "+RSYNCD_DIR+" folder");
 			rsyncd_conf_folder.mkdir();
-			showMsg("Created /sdcard/rsyncdroid folder");
+			showMsg("Created "+RSYNCD_DIR+" folder");
 		}
 		else {
-			Log.d(LOG_TAG, "/sdcard/rsyncdroid/ exists");
+			Log.d(LOG_TAG, RSYNCD_DIR+" exists");
 		}
 		
 		// create rsyncd.conf
