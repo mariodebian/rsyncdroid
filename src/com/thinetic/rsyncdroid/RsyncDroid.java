@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import android.util.Log;
 import android.app.Activity;
 import android.os.Bundle;
@@ -75,7 +74,9 @@ public class RsyncDroid extends Activity {
 				startRsync();
 				Log.d(LOG_TAG, "onCreate() rsync started...");
 				changeStatus();
-				showMsg("rsync started");
+				if (statusRsync()) {
+					showMsg("rsync started");
+				}
 				setResult(android.app.Activity.RESULT_OK);
 			}
 
@@ -119,6 +120,11 @@ public class RsyncDroid extends Activity {
     
     @SuppressWarnings("static-access")
 	public void startRsync() {
+    	if( ! new File(RSYNCD_BIN).exists() ) {
+			showMsg("rsync not installed");
+			return;
+		}
+    	
 		Thread thread = new Thread() {
 			@Override
 			public void run() {
@@ -127,7 +133,7 @@ public class RsyncDroid extends Activity {
 		    		//process = Runtime.getRuntime().exec("sh");
 		    		OutputStream os = process.getOutputStream();
 		    		Log.d(LOG_TAG, "startRsync() cmd='"+RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF+"'");
-		    		writeLine( os, null, RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF + " &");
+		    		writeLine( os, RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF + " &");
 		    		os.flush();
 		    		//process.waitFor();
 				}
@@ -188,8 +194,8 @@ public class RsyncDroid extends Activity {
 		    	process = Runtime.getRuntime().exec("su -c sh");
 		    	//process = Runtime.getRuntime().exec("sh");
 				OutputStream os = process.getOutputStream();
-				writeLine( os, null, "kill -9 " + pid); os.flush();
-				writeLine( os, null, "exit \n"); os.flush();
+				writeLine( os, "kill -9 " + pid); os.flush();
+				writeLine( os, "exit \n"); os.flush();
 				process.waitFor();
 				return true;
 	    	}
@@ -276,34 +282,19 @@ public class RsyncDroid extends Activity {
 	
 	public void saveConf() {
 		Writer output = null;
-		//boolean sucess=false;
 		Log.d(LOG_TAG, "saveConf() init");
 	    try {
 	    	output = new BufferedWriter(new FileWriter(RSYNCD_CONF));
 	    	output.write( txtBox.getText().toString() );
 	    	output.close();
 	    	Log.d(LOG_TAG, "saveConf() saved and closed");
-	    	//sucess=true;
 	    }
 	    catch (IOException e) {
 			e.printStackTrace();
 		}
-	    
-	    /*
-	    if (sucess) {
-	    	Log.d(LOG_TAG, "saveConf() renaming rsyncd.conf.new to rsyncd.conf");
-	    	File f = new File(RSYNCD_CONF + ".new");
-	        if ( f.renameTo(new File("RSYNCD_CONF")) ) {
-	        	Log.d(LOG_TAG, "saveConf() renamed OK");
-	        }
-	        else {
-	        	Log.d(LOG_TAG, "saveConf() fail to rename rsyncd.conf");
-	        }
-	    }*/
 	}
 	
 	public void showMsg(String txt) {
-		//Context context = getApplicationContext();
 		CharSequence text = txt;
 		int duration = Toast.LENGTH_LONG;
 		Toast toast = Toast.makeText(this, text, duration);
@@ -312,14 +303,10 @@ public class RsyncDroid extends Activity {
 	}
 	
 	
-	public static void writeLine(OutputStream os, PrintWriter logWriter, String value) throws IOException
+	public static void writeLine(OutputStream os, String value) throws IOException
 	{
 		String line = value + "\n";
 		os.write( line.getBytes() );
-		if( logWriter != null )
-		{
-			logWriter.println(value);
-		}
 	}
 	
 
