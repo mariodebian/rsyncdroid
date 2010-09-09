@@ -44,7 +44,8 @@ public class RsyncDroid extends Activity {
 	private static final String LOG_TAG = "RsyncDro";
 	private static final String RSYNCD_DIR= "/sdcard/rsyncdroid/";
 	private static final String RSYNCD_CONF= "/sdcard/rsyncdroid/rsyncd.conf";
-	private static final String RSYNCD_BIN= "/system/bin/rsync";
+	//private static final String RSYNCD_BIN= "/data/local/xbin/rsync";
+	private static final String RSYNCD_BIN= "/system/xbin/rsync";
 	private Process process;
 	private static final String [] DEFAULT_CONF = {"uid=0","gid=0","read only = yes",
 	                                               "use chroot = no","","[sdcard]",
@@ -148,7 +149,7 @@ public class RsyncDroid extends Activity {
 		thread.start();
 		// sleep to give some time to statusRsync to detect process
 		try{
-		  Thread.currentThread().sleep(1000);//sleep for 1000 ms
+		  Thread.currentThread().sleep(2000);//sleep for 2000 ms
 		}
 		catch(InterruptedException e){
 			e.printStackTrace();
