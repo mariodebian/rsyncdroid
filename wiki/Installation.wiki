@@ -3,6 +3,8 @@
 
 = Installation =
 
+*Users of CM6 (CyanogenMod) have rsync installed in /system/xbin/rsync, not need to download*
+
   * Download rsync static bin:
 {{{
 wget http://adqmisc.googlecode.com/svn/trunk/androidutils/rsync/rsync-3.0.6-arm-softfloat-linux-gnueabi.gz
@@ -22,4 +24,3 @@ zcat rsync-3.0.6-arm-softfloat-linux-gnueabi.gz > rsync
 {{{
 ./adb install -r ~/Desktop/rsyncdroid.apk 
 }}}
-
