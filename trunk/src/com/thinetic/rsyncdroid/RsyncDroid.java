@@ -19,17 +19,23 @@
  */
 package com.thinetic.rsyncdroid;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+
 import android.util.Log;
 import android.app.Activity;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -44,9 +50,12 @@ public class RsyncDroid extends Activity {
 	private static final String LOG_TAG = "RsyncDro";
 	private static final String RSYNCD_DIR= "/sdcard/rsyncdroid/";
 	private static final String RSYNCD_CONF= "/sdcard/rsyncdroid/rsyncd.conf";
-	//private static final String RSYNCD_BIN= "/data/local/xbin/rsync";
-	private static final String RSYNCD_BIN= "/system/xbin/rsync";
+	private String RSYNCD_BIN= "/system/xbin/rsync";
+	private String RSYNC_PATH = "";
+	private String RSYNC_BIN = "rsync";
 	private Process process;
+	private Boolean USE_ROOT=true;
+	//private String MY_USERNAME = "";
 	private static final String [] DEFAULT_CONF = {"uid=0","gid=0","read only = yes",
 	                                               "use chroot = no","","[sdcard]",
 	                                               " path = /sdcard/"," comment = SD Card"};
@@ -100,8 +109,18 @@ public class RsyncDroid extends Activity {
 		// load configuration in txtBox
 		txtBox.setText( loadConf().toString() );
 		
+		//MY_USERNAME=getUsername();
+		
 		// change checkbox status
 		changeStatus();
+		
+		RSYNC_PATH=rsync_path();
+		RSYNCD_BIN=RSYNC_PATH+ RSYNC_BIN;
+		
+		if( ! new File(RSYNCD_BIN).exists() ) {
+			installRsync(RSYNCD_BIN, R.raw.rsync);
+			showMsg("rsync installed on "+RSYNCD_BIN);
+		}
     }
     
     public void changeStatus() {
@@ -130,13 +149,26 @@ public class RsyncDroid extends Activity {
 			@Override
 			public void run() {
 				try {
-		    		process = Runtime.getRuntime().exec("su -c sh");
-		    		//process = Runtime.getRuntime().exec("sh");
-		    		OutputStream os = process.getOutputStream();
-		    		Log.d(LOG_TAG, "startRsync() cmd='"+RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF+"'");
-		    		writeLine( os, RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF + " &");
-		    		os.flush();
-		    		//process.waitFor();
+		    		if (USE_ROOT) {
+		    			process = Runtime.getRuntime().exec("su -c sh");
+		    			OutputStream os = process.getOutputStream();
+			    		Log.d(LOG_TAG, "startRsync() cmd='"+RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF+"'");
+			    		writeLine( os, RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF + " &");
+			    		os.flush();
+			    		//process.waitFor();
+		    		}
+		    		else {
+		    			/*
+		    			 * FIXME rsync need a privileged port
+		    			 */
+		    			process = Runtime.getRuntime().exec("sh");
+		    			OutputStream os = process.getOutputStream();
+			    		Log.d(LOG_TAG, "startRsync() cmd='"+RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF+"'");
+			    		writeLine( os, RSYNCD_BIN +" --daemon --config " +  RSYNCD_CONF + " &");
+			    		os.flush();
+			    		//process.waitFor();
+		    		}
+		    		
 				}
 				catch ( IOException e ) {
 		    		e.printStackTrace();
@@ -169,7 +201,7 @@ public class RsyncDroid extends Activity {
 			while ( (temp = stdInput.readLine()) != null ) {
 				//Log.d(LOG_TAG, "stopRsync() temp='"+temp+"'");
 				if ( temp.contains(RSYNCD_BIN) ) {
-					Log.d(LOG_TAG, "statusRsync() temp='"+temp+"'");
+					//Log.d(LOG_TAG, "statusRsync() temp='"+temp+"'");
 					String [] cmdArray = temp.split(" +");
 					for (i=0; i< cmdArray.length; i++) {
 						Log.d(LOG_TAG, "loop i="+ i + " => " + cmdArray[i]);
@@ -192,13 +224,23 @@ public class RsyncDroid extends Activity {
 	    if ( pid != "") {
 	    	Log.d(LOG_TAG, "statusRsync() killing='"+pid+"' ...");
 	    	try {
-		    	process = Runtime.getRuntime().exec("su -c sh");
-		    	//process = Runtime.getRuntime().exec("sh");
-				OutputStream os = process.getOutputStream();
-				writeLine( os, "kill -9 " + pid); os.flush();
-				writeLine( os, "exit \n"); os.flush();
-				process.waitFor();
-				return true;
+	    		if (USE_ROOT){
+	    			process = Runtime.getRuntime().exec("su -c sh");
+	    			OutputStream os = process.getOutputStream();
+					writeLine( os, "kill -9 " + pid); os.flush();
+					writeLine( os, "exit \n"); os.flush();
+					process.waitFor();
+					return true;
+	    		}
+	    		else {
+	    			process = Runtime.getRuntime().exec("sh");
+	    			OutputStream os = process.getOutputStream();
+					writeLine( os, "kill -9 " + pid); os.flush();
+					writeLine( os, "exit \n"); os.flush();
+					process.waitFor();
+					return true;
+	    		}
+				
 	    	}
 	    	catch (IOException e) {
 				e.printStackTrace();
@@ -224,8 +266,9 @@ public class RsyncDroid extends Activity {
 			
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			while ( (temp = stdInput.readLine()) != null ) {
-				if ( temp.contains(RSYNCD_BIN) ) {
-					Log.d(LOG_TAG, "statusRsync() temp='"+temp+"'");
+				//Log.d(LOG_TAG, "statusRsync() temp='"+temp+"'");
+				if ( temp.contains("app_bin/rsync") ) {
+					Log.d(LOG_TAG, "statusRsync() FOUND temp='"+temp+"'");
 					run = true;
 				}
 			}
@@ -311,9 +354,84 @@ public class RsyncDroid extends Activity {
 	}
 	
 
+	private void installRsync(String ff_file, int rawid) {
+		
+		Log.d(LOG_TAG, "installRsync() **rsync_abspath="+ff_file+"**");
+		
+		if( ! new File(ff_file).exists() ) {
+			InputStream rsyncraw;
+			Log.d(LOG_TAG, "installRsync() **no exists, copy...**");
+			try {
+				rsyncraw = getResources().openRawResource(rawid);
+			}
+			catch (Exception e) {
+		    	e.printStackTrace();
+		    	Log.d(LOG_TAG, "installRsync() **Exception**");
+		    	return;
+		    }
+			finally {
+				Log.d(LOG_TAG, "installRsync() ** OPENED rsync_abspath="+ff_file+"**");
+			}
+			BufferedOutputStream fOut = null;
+		    try {
+		      fOut = new BufferedOutputStream(new FileOutputStream(ff_file));
+		      byte[] buffer = new byte[32 * 1024];
+		      int bytesRead = 0;
+		      while ((bytesRead = rsyncraw.read(buffer)) != -1) {
+		        fOut.write(buffer, 0, bytesRead);
+		      }
+		      Log.d(LOG_TAG, "installRsync() **no exists, copy done**");
+		      Runtime.getRuntime().exec("chmod 755 " + ff_file);
+		    }
+		    catch (Exception e) {
+		    	e.printStackTrace();
+		    	Log.d(LOG_TAG, "installRsync() **Exception**");
+		    }
+		    finally {
+		      try {
+		    	  rsyncraw.close();
+		    	  fOut.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					Log.d(LOG_TAG, "installRsync() **Exception**");
+				}
+		    }
+		}
+	}
 	
 	
+	private String rsync_path() {
+		ContextWrapper cw = new ContextWrapper(getBaseContext());
+		File directory = cw.getDir("bin", Context.MODE_PRIVATE);
+		String rsync_abspath = directory +"/";
+		return rsync_abspath;
+	}
+
 	
-  
+	/*
+	private String getUsername() {
+		String temp="";
+		try{
+    		Process p = Runtime.getRuntime().exec("whoami");
+			p.waitFor();
+			
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			while ( (temp = stdInput.readLine()) != null ) {
+				Log.d(LOG_TAG, "getUsername() temp='"+temp+"'");
+				if ( temp != "" ) {
+					return temp;
+				}
+			}
+    		
+    	}
+    	catch (IOException e) {
+			e.printStackTrace();
+		}
+	    catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	    
+	    return temp;
+	}*/
 }
 
